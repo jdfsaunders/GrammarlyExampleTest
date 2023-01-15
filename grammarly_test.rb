@@ -3,12 +3,15 @@ require 'rspec'
 require 'require_all'
 require_all 'page/'
 describe 'GrammarlyExtension' do
+
+    let(:google_chrome_data_dir) { '/home/jesse/.config/google-chrome' }
     
     let(:wait) { Selenium::WebDriver::Wait.new(:timeout => 20) }
 
     let(:driver) do
         options = Selenium::WebDriver::Chrome::Options.new
-        options.add_argument('user-data-dir=/home/jesse/.config/google-chrome')
+        options.add_argument("user-data-dir=#{google_chrome_data_dir}")
+        options.add_argument('start-maximized')
         driver = Selenium::WebDriver.for(:chrome, capabilities: options)
         # I prefer disabling implicit waits and making waits explicit
         driver.manage.timeouts.implicit_wait = 0
