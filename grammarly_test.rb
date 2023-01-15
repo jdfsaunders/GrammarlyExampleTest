@@ -1,7 +1,7 @@
 require 'selenium-webdriver'
 require 'rspec'
-
-
+require 'require_all'
+require_all 'page/'
 describe 'GrammarlyExtension' do
     
     let(:wait) { Selenium::WebDriver::Wait.new(:timeout => 20) }
@@ -15,74 +15,22 @@ describe 'GrammarlyExtension' do
         driver
     end
 
-    # Test Page
-    def navigate_to_test_page
-        url = 'https://tarry-sturdy-indigo.glitch.me/'
-        driver.navigate.to url
+    let(:grammarly) do
+        Page::Grammarly.new(driver, wait)
     end
 
-    def text_area 
-        driver.find_element(:id, 'testingTextArea')
-    end
-    
-    def enter_text(input)
-        text_area.send_keys input
-        sleep(1) # some time for typing to be picked up
+    let(:chrome_extension_manager) do
+        Page::ChromeExtensionManager.new(driver, wait)
     end
 
-    # Grammarly Page Stuff
-    def grammarly_extension_elements
-        driver.find_elements(:tag_name, 'grammarly-extension')
+    let(:test_page) do
+        Page::TestPage.new(driver, wait)
     end
 
-    def grammarly_highlights
-        grammarly_extension_elements.last.shadow_root.find_elements(:css, '[data-grammarly-part="highlight"]')
-    end
-
-    def grammarly_button 
-        grammarly_extension_elements.first.shadow_root.find_element(:css, '[data-grammarly-part="gbutton"]')
-    end
-
-    def grammarly_mirror_element
-        driver.find_element(:tag_name, 'grammarly-mirror')
-    end
-
-    def unknown_word_card_header 
-        grammarly_mirror_element.shadow_root.find_element(:css, '[data-grammarly-part="unknown-word-card"] [data-grammarly-part="card-header"]')
-    end
-
-    def upgrade_button 
-        grammarly_mirror_element.shadow_root.find_element(:css, '[data-name="goPremiumExp"]')
-    end
-
-    def wait_until_grammarly_idle
-        wait.until { grammarly_button.attribute('data-gbutton-checking-status') == 'idle'}
-    end
-
-    # Chrome Extension Management
-    let(:extension_url) { 'chrome://extensions/' }
-    def extension_item_list 
-        driver.find_element(:tag_name, 'extensions-manager').shadow_root
-            .find_element(:css, '#items-list').shadow_root
-    end
-    def extension_item(extension_id)
-        extension_item_list.find_element(:id, extension_id).shadow_root
-    end
-
-    def extension_installed?(extension_id)
-        extension_item_list.find_elements(:id, extension_id).length == 1
-    end
-
-    def extension_item_enabled?(extension_id)
-        extension_item(extension_id).find_element(:id, 'enableToggle').attribute('checked') 
-    end
-
-    let(:grammarly_id) { 'kbfnbcaeplbcioakkpcpgfkobkghlhen' }
-
-    # this will stay as a general helper method here
+    # Grammarly doesn't seem to recognize this text area until it has been clicked into
     def wait_for_grammarly_extension_ready
-        text_area.click
-        wait.until { grammarly_extension_elements.length > 0 }
+        test_page.text_area.click
+        wait.until { grammarly.extension_containers.length > 0 }
     end
 
     after do
@@ -91,23 +39,23 @@ describe 'GrammarlyExtension' do
 
     it 'is installed and enabled' do
         # Validate Grammarly is installed and enabled
-        driver.navigate.to extension_url
-        expect(extension_installed?(grammarly_id)).to be_truthy, "The Grammarly plugin either is not installed or the extension id has changed"
-        expect(extension_item_enabled?(grammarly_id)).to be_truthy, "The grammarly plugin is not enabled, enable it in the test profile and re-run tests"
+        chrome_extension_manager.navigate
+        expect(chrome_extension_manager.extension_installed?(:grammarly)).to be_truthy, "The Grammarly plugin either is not installed or the extension id has changed"
+        expect(chrome_extension_manager.extension_enabled?(:grammarly)).to be_truthy, "The grammarly plugin is not enabled, enable it in the test profile and re-run tests"
     end
 
     it 'gives the user a button that allows the user to subscribe if premium feature correction is detected' do
-        navigate_to_test_page
+        test_page.navigate
         wait_for_grammarly_extension_ready
-        enter_text 'that was a mistake I makes'
+        test_page.text_area.send_keys 'that was a mistake I makes'
         
-        wait_until_grammarly_idle
-        grammarly_button.click
+        grammarly.wait_until_idle
+        grammarly.status_indicator.click
 
-        wait.until { upgrade_button }
-        wait.until { upgrade_button.displayed? }
-        expect(upgrade_button.text).to eq 'Unlock Premium'
-        upgrade_button.click
+        wait.until { grammarly.upgrade_button }
+        wait.until { grammarly.upgrade_button.displayed? }
+        expect(grammarly.upgrade_button.text).to eq 'Unlock Premium'
+        grammarly.upgrade_button.click
 
         wait.until { driver.window_handles.length == 2}
 
@@ -116,14 +64,14 @@ describe 'GrammarlyExtension' do
     end
 
     it 'does not handle Labrador Inuttitut well' do
-        navigate_to_test_page
+        test_page.navigate
         wait_for_grammarly_extension_ready
-        enter_text "Let's put the baby in the kailluaKattautik and go for a walk today.  But the plugin will say kailluakattautik is misspelled."
-        wait_until_grammarly_idle
+        test_page.text_area.send_keys "Let's put the baby in the kailluaKattautik and go for a walk today.  But the plugin will say kailluakattautik is misspelled."
+        grammarly.wait_until_idle
 
-        expect(grammarly_button.text).to eq '1'
-        driver.action.move_to(grammarly_highlights.first).perform
-        expect(unknown_word_card_header.text).to end_with 'kailluakattautik'
+        expect(grammarly.status_indicator.text).to eq '1'
+        driver.action.move_to(grammarly.highlights.first).perform
+        expect(grammarly.unknown_word_card_header.text).to end_with 'kailluakattautik'
     end
 
 end
