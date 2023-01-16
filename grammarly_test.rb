@@ -44,7 +44,6 @@ describe 'GrammarlyExtension' do
     it 'is installed and enabled' do
         # Validate Grammarly is installed and enabled
         chrome_extension_manager.navigate
-        binding.pry
         expect(chrome_extension_manager.extension_installed?(:grammarly)).to be_truthy, "The Grammarly plugin either is not installed or the extension id has changed"
         expect(chrome_extension_manager.extension_enabled?(:grammarly)).to be_truthy, "The grammarly plugin is not enabled, enable it in the test profile and re-run tests"
     end
@@ -60,7 +59,6 @@ describe 'GrammarlyExtension' do
         wait.until { grammarly.upgrade_button }
         wait.until { grammarly.upgrade_button.displayed? }
         expect(grammarly.upgrade_button.text).to eq 'Unlock Premium'
-        binding.pry
         grammarly.upgrade_button.click
 
         wait.until { driver.window_handles.length == 2}
@@ -77,7 +75,6 @@ describe 'GrammarlyExtension' do
 
         expect(grammarly.status_indicator.text).to eq '1'
         driver.action.move_to(grammarly.highlights.first).perform
-        binding.pry
         expect(grammarly.unknown_word_card_header.text).to end_with 'kailluakattautik'
     end
 
