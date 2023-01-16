@@ -32,6 +32,5 @@ module Page
             sleep(1) if status_indicator.attribute(statusAttribute) == 'idle'
             @wait.until { status_indicator.attribute(statusAttribute) == 'idle'}
         end
-
     end
 end

@@ -7,6 +7,5 @@ module Page
         def text_area 
             @driver.find_element(:id, 'testingTextArea')
         end
-
     end
 end

@@ -8,8 +8,6 @@ module Page
 
         def extension_installed?(extension)
             id = extension_id(extension)
-            # raise ArgumentError, "Unknown Extension: #{extension.inspect}" unless  @@extension_ids.include? extension
-            # extension_id = @@extension_ids[extension]
             extension_list.find_elements(:id, id).length == 1
         end
 
